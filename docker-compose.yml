@@ -1,19 +1,19 @@
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: house_crm_postgres
+    container_name: munirix_postgres
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-house_crm}
+      POSTGRES_DB: ${POSTGRES_DB:-munirix}
     ports:
       - "5433:5432"
     volumes:
-      - house_crm_pgdata:/var/lib/postgresql/data
+      - munirix_pgdata:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-house_crm}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-munirix}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -35,7 +35,7 @@ services:
       NODE_ENV: production
       PORT: 3002
       NEXTAUTH_URL: ${ADMIN_NEXTAUTH_URL:-https://app.munirix.net}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-house_crm}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-munirix}
       DATABASE_SSL: "false"
     depends_on:
       postgres:
@@ -54,7 +54,7 @@ services:
       - .env.local
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-house_crm}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-munirix}
       DATABASE_SSL: "false"
       WORKER_POLL_INTERVAL_MS: ${WORKER_POLL_INTERVAL_MS:-15000}
     depends_on:
@@ -81,8 +81,8 @@ services:
       - munirix_net
 
 volumes:
-  house_crm_pgdata:
-    name: house_crm_pgdata
+  munirix_pgdata:
+    name: munirix_pgdata
   munirix_minio:
     name: munirix_minio
 

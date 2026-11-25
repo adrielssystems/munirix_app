@@ -23,7 +23,10 @@ async function main() {
   console.log('[VERIFY] Crypto AES-256-GCM + HMAC: OK');
 
   // 2. Verificar PostgreSQL + migración 02 + seed Dermatología
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  });
   try {
     const t = await pool.query(
       `SELECT id, name, industry, timezone, enabled_modules FROM tenants WHERE id = 'a0000000-0000-0000-0000-000000000001'`

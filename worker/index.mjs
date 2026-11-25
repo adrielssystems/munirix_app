@@ -26,7 +26,7 @@ function decryptSecret(storedValue) {
   const rawKey =
     process.env.ENCRYPTION_KEY ||
     process.env.NEXTAUTH_SECRET ||
-    'house_crm_dev_fallback_key_change_in_production_2026';
+    'munirix_dev_fallback_key_change_in_production_2026';
   const masterKey = crypto.createHash('sha256').update(String(rawKey)).digest();
   const [, , ivHex, tagHex, cipherHex] = storedValue.split(':');
   const decipher = crypto.createDecipheriv('aes-256-gcm', masterKey, Buffer.from(ivHex, 'hex'));
@@ -272,13 +272,13 @@ async function processDueJobs() {
   }
 }
 
-console.log(`[HOUSE_CRM WORKER] Iniciado. Polling cada ${POLL_MS}ms.`);
+console.log(`[MUNIRIX WORKER] Iniciado. Polling cada ${POLL_MS}ms.`);
 processDueJobs();
 const interval = setInterval(processDueJobs, POLL_MS);
 
 for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, async () => {
-    console.log(`[HOUSE_CRM WORKER] Recibida señal ${sig}, cerrando...`);
+    console.log(`[MUNIRIX WORKER] Recibida señal ${sig}, cerrando...`);
     clearInterval(interval);
     await pool.end();
     process.exit(0);

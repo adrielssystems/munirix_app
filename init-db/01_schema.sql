@@ -119,7 +119,7 @@ CREATE INDEX IF NOT EXISTS idx_webhook_logs_tenant ON webhook_logs(tenant_id);
 
 -- Inserción de Tenant de prueba por defecto
 INSERT INTO tenants (id, name, slug)
-VALUES ('a0000000-0000-0000-0000-000000000001', 'House CRM Demo', 'house-demo')
+VALUES ('a0000000-0000-0000-0000-000000000001', 'Munirix Demo', 'munirix-demo')
 ON CONFLICT (slug) DO NOTHING;
 
 -- Usuario administrador de prueba (password: 'admin123' con hash bcrypt de ejemplo)
@@ -128,7 +128,7 @@ VALUES (
     'b0000000-0000-0000-0000-000000000001',
     'a0000000-0000-0000-0000-000000000001',
     'Admin Demo',
-    'admin@housecrm.local',
+    'demo@munirix.net',
     '$2a$10$wN9aB8N/hF3l.1oU3m1yLe4j81v92r7eN1m.QkP4jZ13bS2V4v3eG', -- password de desarrollo
     'admin'
 ) ON CONFLICT (email) DO NOTHING;

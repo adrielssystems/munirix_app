@@ -12,7 +12,7 @@ export async function GET(req) {
   const token = searchParams.get('hub.verify_token');
   const challenge = searchParams.get('hub.challenge');
 
-  const defaultVerifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN || 'house_crm_verify_token_2026';
+  const defaultVerifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN || 'munirix_verify_token_2026';
 
   if (mode === 'subscribe' && token) {
     if (token === defaultVerifyToken) {

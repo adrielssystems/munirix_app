@@ -4,7 +4,7 @@ import { DollarSign, Download, Filter } from "lucide-react";
 export default function AdminPaymentsPage() {
   // Mock data for simulated payments view
   const payments = [
-    { id: 'INV-2026-001', tenant: 'House CRM Demo', plan: 'Pro', amount: '$49.00', status: 'paid', date: '2026-09-01' },
+    { id: 'INV-2026-001', tenant: 'Munirix Demo', plan: 'Pro', amount: '$49.00', status: 'paid', date: '2026-09-01' },
     { id: 'INV-2026-002', tenant: 'Inmobiliaria Sur', plan: 'Enterprise', amount: '$199.00', status: 'pending', date: '2026-09-15' },
     { id: 'INV-2026-003', tenant: 'Ventas Plus', plan: 'Starter', amount: '$29.00', status: 'overdue', date: '2026-08-30' },
   ];
