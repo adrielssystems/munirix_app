@@ -13,6 +13,18 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm build
 
+# Stage opcional para desplegar el worker separado (--target worker)
+FROM base AS worker
+ENV NODE_ENV=production
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json ./
+COPY src ./src
+COPY worker ./worker
+COPY init-db ./init-db
+COPY scripts ./scripts
+CMD ["node", "worker/index.mjs"]
+
+# Stage final por defecto para Easypanel / docker build sin --target
 FROM base AS app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -27,13 +39,3 @@ COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 USER nextjs
 EXPOSE 3002
 CMD ["node", "server.js"]
-
-FROM base AS worker
-ENV NODE_ENV=production
-COPY --from=deps /app/node_modules ./node_modules
-COPY package.json ./
-COPY src ./src
-COPY worker ./worker
-COPY init-db ./init-db
-COPY scripts ./scripts
-CMD ["node", "worker/index.mjs"]

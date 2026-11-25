@@ -219,7 +219,14 @@ async function dispatchWhatsApp(job) {
 }
 
 async function processDueJobs() {
-  const client = await pool.connect();
+  let client;
+  try {
+    client = await pool.connect();
+  } catch (err) {
+    console.error('[MUNIRIX WORKER] No se pudo conectar a PostgreSQL (reintentará en el próximo ciclo):', err.message);
+    return;
+  }
+
   let jobs = [];
   try {
     await client.query('BEGIN');
@@ -240,7 +247,7 @@ async function processDueJobs() {
     }
     await client.query('COMMIT');
   } catch (err) {
-    await client.query('ROLLBACK');
+    await client.query('ROLLBACK').catch(() => {});
     console.error('[WORKER] Error reclamando jobs:', err.message);
   } finally {
     client.release();
