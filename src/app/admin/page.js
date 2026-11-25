@@ -1,4 +1,4 @@
-﻿import { query } from '@/lib/db';
+import { query } from '@/lib/db';
 import SpotlightCard from '@/components/ui/SpotlightCard';
 import CountUp from '@/components/ui/CountUp';
 import { Building2, CalendarCheck2, MessageCircle, Cpu, Clock } from 'lucide-react';
