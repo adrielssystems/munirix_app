@@ -1,0 +1,92 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: house_crm_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-house_crm}
+    ports:
+      - "5433:5432"
+    volumes:
+      - house_crm_pgdata:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-house_crm}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - munirix_net
+
+  munirix_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+    container_name: munirix_app
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      NEXTAUTH_URL: ${ADMIN_NEXTAUTH_URL:-https://app.munirix.net}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-house_crm}
+      DATABASE_SSL: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - munirix_net
+
+  munirix_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: worker
+    container_name: munirix_worker
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-house_crm}
+      DATABASE_SSL: "false"
+      WORKER_POLL_INTERVAL_MS: ${WORKER_POLL_INTERVAL_MS:-15000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - munirix_net
+
+  minio:
+    image: minio/minio:latest
+    container_name: munirix_minio
+    profiles: ["clinical"]
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-munirix_minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-munirix_minio_secret_2026}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - munirix_minio:/data
+    networks:
+      - munirix_net
+
+volumes:
+  house_crm_pgdata:
+    name: house_crm_pgdata
+  munirix_minio:
+    name: munirix_minio
+
+networks:
+  munirix_net:
+    name: munirix_net
+    driver: bridge
