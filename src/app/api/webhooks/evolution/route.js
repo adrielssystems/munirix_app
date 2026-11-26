@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getTenantByEvolutionInstance } from '@/lib/tenants';
 import { decryptSecret } from '@/lib/crypto';
