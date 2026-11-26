@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { CheckCircle2, Save, XCircle, RefreshCw } from 'lucide-react';
+import MunirixTopToast from '@/components/ui/MunirixTopToast';
 import styles from '../admin.module.css';
 
 export default function PaymentsManager() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [notice, setNotice] = useState('');
+  const [toast, setToast] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
   const [payments, setPayments] = useState([]);
   const [stats, setStats] = useState({ certifiedUsd: 0, pendingCount: 0, pendingUsd: 0 });
   const [accounts, setAccounts] = useState(null);
@@ -31,13 +33,8 @@ export default function PaymentsManager() {
     loadData();
   }, []);
 
-  const handleAction = async (paymentId, action) => {
-    let adminNotes = '';
-    if (action === 'reject') {
-      adminNotes = window.prompt('Motivo del rechazo (opcional):', 'Referencia no encontrada') || '';
-    }
+  const executePaymentAction = async (paymentId, action, adminNotes = '') => {
     setSaving(true);
-    setNotice('');
     try {
       const res = await fetch('/api/admin/payments', {
         method: 'PATCH',
@@ -45,22 +42,45 @@ export default function PaymentsManager() {
         body: JSON.stringify({ paymentId, action, adminNotes }),
       });
       if (res.ok) {
-        setNotice(
-          action === 'certify'
-            ? 'Pago certificado y espacio del cliente activado.'
-            : 'Pago marcado como rechazado.'
-        );
+        setToast({
+          type: action === 'certify' ? 'success' : 'info',
+          message:
+            action === 'certify'
+              ? 'Pago certificado y espacio del cliente activado.'
+              : 'Pago marcado como rechazado.',
+        });
         await loadData();
+      } else {
+        setToast({ type: 'error', message: 'No se pudo procesar la acción del pago.' });
       }
     } finally {
       setSaving(false);
     }
   };
 
+  const handleAction = (paymentId, action) => {
+    if (action === 'reject') {
+      setConfirmDialog({
+        tone: 'danger',
+        title: 'Rechazar comprobante de pago',
+        message: 'Indica el motivo del rechazo para que el cliente pueda corregirlo:',
+        withInput: true,
+        defaultValue: 'Referencia no encontrada',
+        placeholder: 'Motivo del rechazo...',
+        confirmLabel: 'Rechazar pago',
+        onConfirm: (notes) => {
+          setConfirmDialog(null);
+          executePaymentAction(paymentId, 'reject', notes);
+        },
+      });
+      return;
+    }
+    executePaymentAction(paymentId, 'certify');
+  };
+
   const handleSaveAccounts = async (e) => {
     e.preventDefault();
     setSaving(true);
-    setNotice('');
     try {
       const res = await fetch('/api/admin/payments', {
         method: 'PATCH',
@@ -68,7 +88,10 @@ export default function PaymentsManager() {
         body: JSON.stringify({ accounts }),
       });
       if (res.ok) {
-        setNotice('Cuentas de cobro actualizadas en vivo para la pasarela de clientes.');
+        setToast({
+          type: 'success',
+          message: 'Cuentas de cobro actualizadas en vivo para la pasarela de clientes.',
+        });
       }
     } finally {
       setSaving(false);
@@ -81,6 +104,12 @@ export default function PaymentsManager() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <MunirixTopToast
+        toast={toast}
+        onCloseToast={() => setToast(null)}
+        confirmDialog={confirmDialog}
+        onCancelConfirm={() => setConfirmDialog(null)}
+      />
       <div className={styles.pageHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1>Certificación de Pagos & Cuentas</h1>
@@ -95,21 +124,6 @@ export default function PaymentsManager() {
           <RefreshCw size={16} style={{ marginRight: '0.45rem' }} /> Actualizar
         </button>
       </div>
-
-      {notice && (
-        <div
-          style={{
-            padding: '0.85rem 1rem',
-            borderRadius: '10px',
-            background: 'rgba(16, 185, 129, 0.14)',
-            border: '1px solid rgba(16, 185, 129, 0.35)',
-            color: '#a7f3d0',
-            fontSize: '0.88rem',
-          }}
-        >
-          {notice}
-        </div>
-      )}
 
       <div className={styles.gridCards}>
         <div className={styles.glassPanel}>

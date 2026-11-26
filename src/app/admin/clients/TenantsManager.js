@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import SpotlightCard from '@/components/ui/SpotlightCard';
 import SquishSwitch from '@/components/ui/SquishSwitch';
+import MunirixTopToast from '@/components/ui/MunirixTopToast';
 import { MODULE_CATALOG, INDUSTRY_PRESETS, normalizeModules } from '@/lib/modules';
 
 const TIMEZONES = [
@@ -28,6 +29,8 @@ const TIMEZONES = [
 
 export default function TenantsManager({ initialTenants }) {
   const [tenants, setTenants] = useState(initialTenants || []);
+  const [toast, setToast] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
   const [editingTenant, setEditingTenant] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -142,19 +145,34 @@ export default function TenantsManager({ initialTenants }) {
     }
   };
 
-  const handleDelete = async (tenant) => {
-    if (!window.confirm(`¿Eliminar permanentemente "${tenant.name}" y todos sus datos aislados?`)) {
-      return;
-    }
-    const res = await fetch(`/api/admin/tenants/${tenant.id}`, { method: 'DELETE' });
-    if (res.ok) {
-      if (editingTenant?.id === tenant.id) setEditingTenant(null);
-      await refreshTenants();
-    }
+  const handleDelete = (tenant) => {
+    setConfirmDialog({
+      tone: 'danger',
+      title: `Eliminar "${tenant.name}"`,
+      message: 'Se eliminarán permanentemente todos sus datos aislados en PostgreSQL y su instancia en Evolution API.',
+      confirmLabel: 'Sí, eliminar todo',
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        const res = await fetch(`/api/admin/tenants/${tenant.id}`, { method: 'DELETE' });
+        if (res.ok) {
+          if (editingTenant?.id === tenant.id) setEditingTenant(null);
+          await refreshTenants();
+          setToast({ type: 'success', message: `Espacio "${tenant.name}" e instancia eliminados correctamente.` });
+        } else {
+          setToast({ type: 'error', message: 'No se pudo eliminar el cliente.' });
+        }
+      },
+    });
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <MunirixTopToast
+        toast={toast}
+        onCloseToast={() => setToast(null)}
+        confirmDialog={confirmDialog}
+        onCancelConfirm={() => setConfirmDialog(null)}
+      />
       <div
         style={{
           display: 'flex',

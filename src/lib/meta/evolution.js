@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Cliente Evolution API v2 (WhatsApp por instancia para clientes de bajo/medio consumo).
  * Diseñado con la misma interfaz que Meta Cloud API para permitir migración sin fricción.
  */
