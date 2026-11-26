@@ -1,4 +1,4 @@
-﻿import { query } from './db.js';
+import { query } from './db.js';
 
 /**
  * Obtiene la configuración de Meta para un canal e identificador específico (Page ID o Phone Number ID).

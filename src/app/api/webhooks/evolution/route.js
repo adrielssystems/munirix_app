@@ -44,11 +44,16 @@ export async function POST(req) {
       return NextResponse.json({ status: 'instance_not_registered', instance: instanceName });
     }
 
-    // Validar apikey si el header viene presente y el tenant configuró clave
-    const incomingApiKey = req.headers.get('apikey') || body.apikey;
+    // Validar apikey del webhook (exigida si el tenant configuró clave propia; si viene clave, validar contra global)
+    const incomingApiKey = req.headers.get('apikey') || body.apikey || '';
     const storedApiKey = decryptSecret(tenantConfig.evolution_api_key_encrypted);
-    if (storedApiKey && incomingApiKey && incomingApiKey !== storedApiKey) {
-      return NextResponse.json({ error: 'API Key de Evolution inválida' }, { status: 401 });
+    const expectedGlobalKey = process.env.EVOLUTION_API_KEY || '';
+    if (storedApiKey) {
+      if (!incomingApiKey || incomingApiKey !== storedApiKey) {
+        return NextResponse.json({ error: 'API Key de Evolution inválida' }, { status: 401 });
+      }
+    } else if (expectedGlobalKey && incomingApiKey && incomingApiKey !== expectedGlobalKey) {
+      return NextResponse.json({ error: 'API Key global de Evolution inválida' }, { status: 401 });
     }
 
     if (!eventName.includes('messages.upsert') && eventName !== 'messages_upsert') {

@@ -12,8 +12,12 @@ const pool = new Pool({
 });
 
 async function main() {
-  const email = 'adriels.systems@gmail.com';
-  const password = 'dX>34PUQ2.>1';
+  const email = process.env.SUPERADMIN_EMAIL || 'adriels.systems@gmail.com';
+  const password = process.env.SUPERADMIN_PASSWORD;
+  if (!password) {
+    console.error('Define SUPERADMIN_PASSWORD en tus variables de entorno antes de ejecutar este script.');
+    process.exit(1);
+  }
   const role = 'superadmin';
   const name = 'Adriel Systems';
 
