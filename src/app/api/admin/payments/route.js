@@ -38,7 +38,12 @@ const DEFAULT_BILLING_ACCOUNTS = {
 let schemaReady = false;
 async function ensureBillingSchema() {
   if (schemaReady) return;
-  await query(`ALTER TABLE tenants ADD COLUMN IF NOT EXISTS plan_code VARCHAR(40) DEFAULT 'profesional'`);
+  await query(`
+    ALTER TABLE tenants
+      ADD COLUMN IF NOT EXISTS plan_code VARCHAR(40) DEFAULT 'profesional',
+      ADD COLUMN IF NOT EXISTS trial_starts_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ
+  `);
   await query(`
     CREATE TABLE IF NOT EXISTS payment_requests (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

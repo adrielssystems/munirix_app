@@ -176,6 +176,15 @@ export async function POST(req) {
 
     // 6. Ejecutar Agente IA Multitenant y responder vía Evolution API
     if (conversation.ai_enabled && tenantConfig.bot_enabled) {
+      if (tenantConfig.tenant_status === 'trial') {
+        const usageRes = await query(
+          `SELECT COUNT(*)::int AS total FROM messages WHERE tenant_id = $1 AND sender_type = 'bot'`,
+          [tenantId]
+        );
+        if ((usageRes.rows[0]?.total || 0) >= 150) {
+          return NextResponse.json({ status: 'trial_message_limit_reached' });
+        }
+      }
       try {
         aiOutcome = await runTenantAIAgent({
           tenantId,

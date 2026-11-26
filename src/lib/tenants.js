@@ -9,25 +9,25 @@ export async function getTenantByMetaIdentifier(channel, identifier) {
 
   if (channel === 'whatsapp') {
     sql = `
-      SELECT t.id AS tenant_id, t.name AS tenant_name, t.slug AS tenant_slug, c.*
+      SELECT t.id AS tenant_id, t.name AS tenant_name, t.slug AS tenant_slug, t.status AS tenant_status, t.trial_ends_at, c.*
       FROM tenant_meta_configs c
       JOIN tenants t ON t.id = c.tenant_id
       WHERE c.channel = 'whatsapp'
         AND c.phone_number_id = $1
         AND c.is_active = true
-        AND t.status = 'active'
+        AND (t.status = 'active' OR (t.status = 'trial' AND (t.trial_ends_at IS NULL OR t.trial_ends_at > NOW())))
       LIMIT 1
     `;
     params = [identifier];
   } else if (channel === 'instagram' || channel === 'facebook') {
     sql = `
-      SELECT t.id AS tenant_id, t.name AS tenant_name, t.slug AS tenant_slug, c.*
+      SELECT t.id AS tenant_id, t.name AS tenant_name, t.slug AS tenant_slug, t.status AS tenant_status, t.trial_ends_at, c.*
       FROM tenant_meta_configs c
       JOIN tenants t ON t.id = c.tenant_id
       WHERE (c.channel = $1)
         AND (c.page_id = $2 OR c.instagram_account_id = $2)
         AND c.is_active = true
-        AND t.status = 'active'
+        AND (t.status = 'active' OR (t.status = 'trial' AND (t.trial_ends_at IS NULL OR t.trial_ends_at > NOW())))
       LIMIT 1
     `;
     params = [channel, identifier];
@@ -45,13 +45,13 @@ export async function getTenantByMetaIdentifier(channel, identifier) {
 export async function getTenantByEvolutionInstance(instanceName) {
   if (!instanceName) return null;
   const res = await query(
-    `SELECT t.id AS tenant_id, t.name AS tenant_name, t.slug AS tenant_slug, c.*
+    `SELECT t.id AS tenant_id, t.name AS tenant_name, t.slug AS tenant_slug, t.status AS tenant_status, t.trial_ends_at, c.*
      FROM tenant_meta_configs c
      JOIN tenants t ON t.id = c.tenant_id
      WHERE c.channel = 'whatsapp'
        AND c.evolution_instance = $1
        AND c.is_active = true
-       AND t.status = 'active'
+       AND (t.status = 'active' OR (t.status = 'trial' AND (t.trial_ends_at IS NULL OR t.trial_ends_at > NOW())))
      LIMIT 1`,
     [String(instanceName).trim()]
   );
@@ -60,7 +60,7 @@ export async function getTenantByEvolutionInstance(instanceName) {
 
 export async function getTenantBySlug(slug) {
   const res = await query(
-    `SELECT * FROM tenants WHERE slug = $1 AND status = 'active' LIMIT 1`,
+    `SELECT * FROM tenants WHERE slug = $1 AND status IN ('active', 'trial') LIMIT 1`,
     [slug]
   );
   return res.rows[0] || null;
