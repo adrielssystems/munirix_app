@@ -104,3 +104,17 @@ export async function sendEvolutionText({ apiUrl, apiKey, instance, toPhone, tex
   };
 }
 
+export async function deleteEvolutionInstance({ apiUrl, apiKey, instance }) {
+  if (!instance) return null;
+  try {
+    await evolutionFetch(apiUrl, apiKey, `/instance/logout/${encodeURIComponent(instance)}`, {
+      method: 'DELETE',
+    });
+  } catch {
+    // Si ya estaba desconectada, continuar con el borrado directo
+  }
+  return evolutionFetch(apiUrl, apiKey, `/instance/delete/${encodeURIComponent(instance)}`, {
+    method: 'DELETE',
+  });
+}
+
