@@ -1,4 +1,4 @@
-﻿import PaymentsManager from './PaymentsManager';
+import PaymentsManager from './PaymentsManager';
 
 export const dynamic = 'force-dynamic';
 
