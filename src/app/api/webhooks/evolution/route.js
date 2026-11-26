@@ -119,12 +119,14 @@ export async function POST(req) {
     const conversation = convRes.rows[0];
 
     // 3. Guardar Mensaje entrante
-    await query(
+    const savedMsgRes = await query(
       `INSERT INTO messages (tenant_id, conversation_id, sender_type, sender_id, content, message_type, external_message_id, delivery_status, payload)
        VALUES ($1, $2, 'contact', $3, $4, 'text', $5, 'received', $6::jsonb)
-       ON CONFLICT (tenant_id, external_message_id) WHERE external_message_id IS NOT NULL DO NOTHING`,
+       ON CONFLICT (tenant_id, external_message_id) WHERE external_message_id IS NOT NULL DO NOTHING
+       RETURNING id`,
       [tenantId, conversation.id, senderNumber, messageText, externalMessageId, JSON.stringify(data)]
     );
+    const savedMessageId = savedMsgRes.rows[0]?.id || null;
 
     // 4. Respuesta rápida a recordatorio en Evolution ("1" o "Confirmar")
     let aiOutcome = null;
@@ -152,7 +154,27 @@ export async function POST(req) {
       }
     }
 
-    // 5. Ejecutar Agente IA Multitenant y responder vía Evolution API
+    // 5. Debounce humano (esperar unos segundos por si el usuario envía varios mensajes seguidos)
+    const debounceMs = Math.max(0, Number(process.env.AI_DEBOUNCE_MS ?? 6000));
+    if (debounceMs > 0 && savedMessageId && conversation.ai_enabled && tenantConfig.bot_enabled) {
+      await new Promise((resolve) => setTimeout(resolve, debounceMs));
+
+      const latestCheck = await query(
+        `SELECT m.id, c.ai_enabled
+         FROM messages m
+         JOIN conversations c ON c.id = m.conversation_id
+         WHERE m.conversation_id = $1 AND m.sender_type = 'contact'
+         ORDER BY m.created_at DESC, m.id DESC
+         LIMIT 1`,
+        [conversation.id]
+      );
+      const latestRow = latestCheck.rows[0];
+      if (!latestRow || latestRow.id !== savedMessageId || !latestRow.ai_enabled) {
+        return NextResponse.json({ status: 'debounced_newer_message_arrived' });
+      }
+    }
+
+    // 6. Ejecutar Agente IA Multitenant y responder vía Evolution API
     if (conversation.ai_enabled && tenantConfig.bot_enabled) {
       try {
         aiOutcome = await runTenantAIAgent({
